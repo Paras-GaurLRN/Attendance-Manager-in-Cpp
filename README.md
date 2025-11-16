@@ -6,4 +6,8 @@ Follows a strong Relational DataBase Manager approach, implimenting Codd's Rules
 
 Specifically Optimized To Work On Specific Data Types Only.
 
-### To Be Updated Soon
+# Software Information
+
+> C++ version
+C++ Standard Version: 201703     
+C++17
