@@ -1,5 +1,6 @@
 #include <iostream> // For debugging, remove later
 #include <vector>
+#include <ctime>
 
 /*Custom Exceptions*/
 class invalid_input : public std::exception
@@ -45,18 +46,18 @@ class ATTENDANCE_t {
 
 class SUBJECT_t {
     protected:
-    std::string name;
+    std::string id;
     short marks;
     const unsigned short max_marks;
 
     SUBJECT_t() = delete;
 
-    explicit SUBJECT_t(std::string _name, unsigned short _max_marks) noexcept : name(_name), max_marks(_max_marks), marks(-1) {}
+    explicit SUBJECT_t(std::string _id, unsigned short _max_marks) noexcept : id(_id), max_marks(_max_marks), marks(-1) {}
 
-    explicit SUBJECT_t(std::string _name, unsigned short _max_marks, int _marks) noexcept(false) : max_marks(_max_marks) {
+    explicit SUBJECT_t(std::string _id, unsigned short _max_marks, int _marks) noexcept(false) : max_marks(_max_marks) {
         if(_marks < 0) {throw invalid_input();}
         else if(_marks > max_marks) {throw invalid_input();}
-        name = _name;
+        id = _id;
         marks = _marks;
     }
 
@@ -81,36 +82,79 @@ class SUBJECT_template : public SUBJECT_t {
     public:
     SUBJECT_template() = delete;
     
-    explicit SUBJECT_template(std::string _name, unsigned short _max_marks) noexcept : SUBJECT_t(_name, _max_marks) {}
+    explicit SUBJECT_template(std::string _id, unsigned short _max_marks) noexcept : SUBJECT_t(_id, _max_marks) {}
 
-    explicit SUBJECT_template(std::string _name, unsigned short _max_marks, int _marks) noexcept(false)
-    : SUBJECT_t(_name, _max_marks, _marks) {}
+    explicit SUBJECT_template(std::string _id, unsigned short _max_marks, int _marks) noexcept(false)
+    : SUBJECT_t(_id, _max_marks, _marks) {}
 };
 
-/*
-template <class T>
+/* Most probably going to be depricated beacuse of data storage structure change
+
+template <class SUB>
 class SUBJECT_CONTAINER_t {
-    static_assert(std::is_base_of<SUBJECT_t, T>::value, "T must be derived from SUBJECT_t");
+    static_assert(std::is_base_of<SUBJECT_template, SUB>::value, "T must be derived from SUBJECT_t");
     // For Compile Time Checking
 
     private:
-    std::vector<SUBJECT_t*> subjects;
+    std::vector<SUB*> subjects;
 
     public:
     SUBJECT_CONTAINER_t() = delete;
 
-    SUBJECT_CONTAINER_t(std::vector<SUBJECT_t*> _subjects) noexcept : subjects(_subjects) {}
+    SUBJECT_CONTAINER_t(std::vector<SUB*> _subjects) noexcept : subjects(_subjects) {}
 
     friend void operator +(SUBJECT_CONTAINER_t& sc, SUBJECT_t* sub) noexcept {
         sc.subjects.push_back(sub);
     }
 };
-
-Yet To Be Finished
 */
 
 /*Date Datatype Class and handeling*/
-class DATE_t{};
+class DATE_t {
+    private:
+    unsigned short day;
+    unsigned short month;
+    unsigned short year;
+
+    public:
+    explicit DATE_t() noexcept {
+        std::time_t t = std::time(nullptr);
+        std::tm* now = std::localtime(&t);
+        day = now->tm_mday;
+        month = now->tm_mon + 1;
+        year = now->tm_year + 1900;
+    }
+
+    bool isValidDate(unsigned short d, unsigned short m, unsigned short y) const noexcept {
+        if(m < 1 || m > 12 || d < 1 || y < year) {return false;}
+
+        unsigned short days_in_month;
+        switch(m) {
+        case 1: case 3: case 5: case 7: case 8: case 10: case 12: {days_in_month = 31; break;}
+        case 4: case 6: case 9: case 11: {days_in_month = 30; break;}
+        case 2: {days_in_month = 28;}}
+        // This is better than a list, as it saves memory, which is more important here
+        
+        if((m == 2) && ((y % 4 == 0 && y % 100 != 0) || (y % 400 == 0))) {days_in_month++;}
+        
+        if(d > days_in_month) {return false;}
+        
+        return true;
+    }
+
+    void setDate(unsigned short d, unsigned short m, unsigned short y) noexcept(false) {
+        // Basic Validation
+        if(!isValidDate(d, m, y)) {throw invalid_input();}
+
+        day = d; month = m; year = y;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const DATE_t& dt)
+    {
+        os << dt.day << "/" << dt.month << "/" << dt.year;
+        return os;
+    }
+};
 
 /*Each Student Data Class Stuff*/
 class STUDENT_t {
@@ -125,7 +169,7 @@ class DATA_CUBE{}; // This will ensure that data is consistent and properly conn
 
 /*Debugging Use Only*/
 
-main()
+int main()
 {
     try{
         char c; std::cout << "Enter Input : "; std::cin >> c;
