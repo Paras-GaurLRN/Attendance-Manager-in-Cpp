@@ -165,7 +165,39 @@ class STUDENT_RECORD_t{};
 
 /*Making The Full Data Storage Structure (3-D Table)*/
 
-class DATA_CUBE{}; // This will ensure that data is consistent and properly connected
+template <class SUB_t>
+class SSD_TABLE {
+    // Add Password Protection Later
+    private:
+    static_assert(std::is_base_of<SUBJECT_template, SUB>::value, "SUB must be derived from SUBJECT_template");
+
+    std::vector<STUDENT_RECORD_t*> students;
+    std::vector<SUB_t*> subjects;
+    std::vector<DATE_t*> dates;
+    static short count;
+
+    public:
+    SSD_TABLE() = delete;
+
+    explicit SSD_TABLE(std::vector<STUDENT_RECORD_t*> _students,
+            std::vector<SUB_t*> _subjects,
+            std::vector<DATE_t*> _dates) noexcept(false)
+    {
+        if(count == 1) {throw std::runtime_error("SSD_TABLE Instance Already Exists!");}
+        count++;
+        students = _students;
+        subjects = _subjects;
+        dates = _dates;
+    }
+
+    void operator+(STUDENT_RECORD_t* student) noexcept {students.push_back(student);}
+    void operator+(SUB_t* subject) noexcept {subjects.push_back(subject);}
+    void operator+(DATE_t* date) noexcept {dates.push_back(date);}
+
+}; // This will ensure that data is consistent and properly connected
+
+template <class SUB_t>
+short SSD_TABLE<SUB_t>::count = 0;
 
 /*Debugging Use Only*/
 
