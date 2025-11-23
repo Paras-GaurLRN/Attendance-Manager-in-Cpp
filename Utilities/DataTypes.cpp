@@ -44,26 +44,39 @@ class ATTENDANCE_t {
 
 /*Subjects Base Classes*/
 
-class SUBJECT_t {
+class SUBJECT_base {
     protected:
     std::string id;
-    short marks;
+    unsigned short marks;
     const unsigned short max_marks;
 
-    SUBJECT_t() = delete;
+    SUBJECT_base() = delete;
 
-    explicit SUBJECT_t(std::string _id, unsigned short _max_marks) noexcept : id(_id), max_marks(_max_marks), marks(-1) {}
+    explicit SUBJECT_base(std::string _id, unsigned short _max_marks) noexcept 
+    : id(_id), max_marks(_max_marks), marks(-1) {}
 
-    explicit SUBJECT_t(std::string _id, unsigned short _max_marks, int _marks) noexcept(false) : max_marks(_max_marks) {
+    explicit SUBJECT_base(std::string _id, unsigned short _max_marks, int _marks) noexcept(false)
+    : id(_id), max_marks(_max_marks) {}
+};
+
+class SUBJECT_t : public SUBJECT_base {
+    private:
+    unsigned short validateMarks(int _marks) noexcept(false) {
         if(_marks < 0) {throw invalid_input();}
         else if(_marks > max_marks) {throw invalid_input();}
-        id = _id;
-        marks = _marks;
+        return static_cast<unsigned short>(_marks);
     }
 
-    public: // How to make it so that only called from derived classes?
+    public:
+    SUBJECT_t() = delete;
+    
+    explicit SUBJECT_t(std::string _id, unsigned short _max_marks) noexcept : SUBJECT_base(_id, _max_marks) {}
+
+    explicit SUBJECT_t(std::string _id, unsigned short _max_marks, int _marks) noexcept(false)
+    : SUBJECT_base(_id, _max_marks, validateMarks(_marks)) {}
+
     unsigned short getMarks() const noexcept(false) {
-        if(marks < 0) {throw marks_not_assigned();}
+        if(marks == -1) {throw marks_not_assigned();}
         return marks;
     }
 
@@ -78,21 +91,11 @@ class SUBJECT_t {
     }
 };
 
-class SUBJECT_template : public SUBJECT_t {
-    public:
-    SUBJECT_template() = delete;
-    
-    explicit SUBJECT_template(std::string _id, unsigned short _max_marks) noexcept : SUBJECT_t(_id, _max_marks) {}
-
-    explicit SUBJECT_template(std::string _id, unsigned short _max_marks, int _marks) noexcept(false)
-    : SUBJECT_t(_id, _max_marks, _marks) {}
-};
-
 /* Most probably going to be depricated beacuse of data storage structure change
 
 template <class SUB>
 class SUBJECT_CONTAINER_t {
-    static_assert(std::is_base_of<SUBJECT_template, SUB>::value, "T must be derived from SUBJECT_t");
+    static_assert(std::is_base_of<SUBJECT_t, SUB>::value, "T must be derived from SUBJECT_base");
     // For Compile Time Checking
 
     private:
@@ -103,7 +106,7 @@ class SUBJECT_CONTAINER_t {
 
     SUBJECT_CONTAINER_t(std::vector<SUB*> _subjects) noexcept : subjects(_subjects) {}
 
-    friend void operator +(SUBJECT_CONTAINER_t& sc, SUBJECT_t* sub) noexcept {
+    friend void operator +(SUBJECT_CONTAINER_t& sc, SUBJECT_base* sub) noexcept {
         sc.subjects.push_back(sub);
     }
 };
@@ -165,14 +168,13 @@ class STUDENT_RECORD_t{};
 
 /*Making The Full Data Storage Structure (3-D Table)*/
 
-template <class SUB_t>
 class SSD_TABLE {
     // Add Password Protection Later
     private:
-    static_assert(std::is_base_of<SUBJECT_template, SUB>::value, "SUB must be derived from SUBJECT_template");
+    // static_assert(std::is_base_of<SUBJECT_t, SUB>::value, "SUB must be derived from SUBJECT_t");
 
     std::vector<STUDENT_RECORD_t*> students;
-    std::vector<SUB_t*> subjects;
+    std::vector<SUBJECT_t*> subjects;
     std::vector<DATE_t*> dates;
     static short count;
 
@@ -180,7 +182,7 @@ class SSD_TABLE {
     SSD_TABLE() = delete;
 
     explicit SSD_TABLE(std::vector<STUDENT_RECORD_t*> _students,
-            std::vector<SUB_t*> _subjects,
+            std::vector<SUBJECT_t*> _subjects,
             std::vector<DATE_t*> _dates) noexcept(false)
     {
         if(count == 1) {throw std::runtime_error("SSD_TABLE Instance Already Exists!");}
@@ -190,14 +192,15 @@ class SSD_TABLE {
         dates = _dates;
     }
 
+    ~SSD_TABLE() noexcept {count--;}
+
     void operator+(STUDENT_RECORD_t* student) noexcept {students.push_back(student);}
-    void operator+(SUB_t* subject) noexcept {subjects.push_back(subject);}
+    void operator+(SUBJECT_t* subject) noexcept {subjects.push_back(subject);}
     void operator+(DATE_t* date) noexcept {dates.push_back(date);}
 
 }; // This will ensure that data is consistent and properly connected
 
-template <class SUB_t>
-short SSD_TABLE<SUB_t>::count = 0;
+short SSD_TABLE::count = 0;
 
 /*Debugging Use Only*/
 
