@@ -2,6 +2,8 @@
 #include <vector>
 #include <ctime>
 
+// /*Password Check*/ needs to be replaced with actual password handling mechanism
+
 /*Custom Exceptions*/
 class invalid_input : public std::exception
 {
@@ -16,6 +18,14 @@ class marks_not_assigned : public std::exception
     public:
     virtual const char* what() const noexcept {
         return "Please Assign Marks Before Acessing It!\n";
+    }
+};
+
+class SSD_TABLE_already_exists : public std::exception
+{
+    public:
+    virtual const char* what() const noexcept {
+        return "SSD_TABLE Instance Already Exists!\n";
     }
 };
 
@@ -84,10 +94,7 @@ class SUBJECT_t : public SUBJECT_base {
         if(_marks < 0) {throw invalid_input();}
         else if(_marks > max_marks) {throw invalid_input();}
         else if(marks == -1){marks = _marks;}
-        else
-        {
-// How to make it so that this asks for password before updating marks?
-        }
+        else {/*Password Check*/marks = _marks;}
     }
 };
 
@@ -113,44 +120,69 @@ class SUBJECT_CONTAINER_t {
 */
 
 /*Date Datatype Class and handeling*/
-class DATE_t {
+class DATE_base {
+    protected:
+    const unsigned short day;
+    const unsigned short month;
+    const unsigned short year;
+
+    explicit DATE_base(unsigned short _day, unsigned short _month, unsigned short _year) noexcept 
+    : day(_day), month(_month), year(_year) {}
+
+};
+
+class DATE_t : public DATE_base{
     private:
-    unsigned short day;
-    unsigned short month;
-    unsigned short year;
+    enum{Uninitalized = -1, False, True};
+    class trool {
+        public:
+        short state;
 
+        explicit trool() : state(Uninitalized) {}
+        
+        operator bool() const noexcept {
+            if(state == Uninitalized) {return false;}
+            return static_cast<bool>(state);
+        }
+
+    } Input_Validity_Flag;
+
+    std::time_t t = std::time(nullptr);
+    std::tm* now = std::localtime(&t);
+    
     public:
-    explicit DATE_t() noexcept {
-        std::time_t t = std::time(nullptr);
-        std::tm* now = std::localtime(&t);
-        day = now->tm_mday;
-        month = now->tm_mon + 1;
-        year = now->tm_year + 1900;
-    }
+    explicit DATE_t() noexcept 
+    : DATE_base(static_cast<unsigned short>(now->tm_mday),
+                static_cast<unsigned short>(now->tm_mon),
+                static_cast<unsigned short>(now->tm_year)) {}
 
-    bool isValidDate(unsigned short d, unsigned short m, unsigned short y) const noexcept {
-        if(m < 1 || m > 12 || d < 1 || y < year) {return false;}
+    unsigned short getDay() const noexcept {return day;}
+    unsigned short getMonth() const noexcept {return month;}
+    unsigned short getYear() const noexcept {return year;}
 
-        unsigned short days_in_month;
-        switch(m) {
-        case 1: case 3: case 5: case 7: case 8: case 10: case 12: {days_in_month = 31; break;}
-        case 4: case 6: case 9: case 11: {days_in_month = 30; break;}
-        case 2: {days_in_month = 28;}}
-        // This is better than a list, as it saves memory, which is more important here
+    // bool isValidDate(unsigned short d, unsigned short m, unsigned short y) const noexcept {
+    //     if(m < 1 || m > 12 || d < 1 || y < year) {return false;}
+
+    //     unsigned short days_in_month;
+    //     switch(m) {
+    //     case 1: case 3: case 5: case 7: case 8: case 10: case 12: {days_in_month = 31; break;}
+    //     case 4: case 6: case 9: case 11: {days_in_month = 30; break;}
+    //     case 2: {days_in_month = 28;}}
+    //     // This is better than a list, as it saves memory, which is more important here
         
-        if((m == 2) && ((y % 4 == 0 && y % 100 != 0) || (y % 400 == 0))) {days_in_month++;}
+    //     if((m == 2) && ((y % 4 == 0 && y % 100 != 0) || (y % 400 == 0))) {days_in_month++;}
         
-        if(d > days_in_month) {return false;}
+    //     if(d > days_in_month) {return false;}
         
-        return true;
-    }
+    //     return true;
+    // }
 
-    void setDate(unsigned short d, unsigned short m, unsigned short y) noexcept(false) {
-        // Basic Validation
-        if(!isValidDate(d, m, y)) {throw invalid_input();}
+    // void setDate(unsigned short d, unsigned short m, unsigned short y) noexcept(false) {
+    //     // Basic Validation
+    //     if(!isValidDate(d, m, y)) {throw invalid_input();}
 
-        day = d; month = m; year = y;
-    }
+    //     day = d; month = m; year = y;
+    // }
 
     friend std::ostream& operator<<(std::ostream& os, const DATE_t& dt)
     {
@@ -185,7 +217,7 @@ class SSD_TABLE {
             std::vector<SUBJECT_t*> _subjects,
             std::vector<DATE_t*> _dates) noexcept(false)
     {
-        if(count == 1) {throw std::runtime_error("SSD_TABLE Instance Already Exists!");}
+        if(count == 1) {throw SSD_TABLE_already_exists();}
         count++;
         students = _students;
         subjects = _subjects;
