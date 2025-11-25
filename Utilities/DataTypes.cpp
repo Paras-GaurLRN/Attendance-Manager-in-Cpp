@@ -192,8 +192,21 @@ class DATE_t : public DATE_base{
 };
 
 /*Each Student Data Class Stuff*/
-class STUDENT_t {
+class STUDENT_base {
+    protected:
+    std::string id;
 
+    STUDENT_base() = delete;
+};
+
+class STUDENT_t : STUDENT_base {
+    public: enum{Other = -1, Male, Female};
+    private:
+    std::string name;
+
+    public:
+    STUDENT_t() = delete;
+    
 };
 
 class STUDENT_RECORD_t{};
